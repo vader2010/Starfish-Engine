@@ -1,5 +1,6 @@
 import pygame
 from pygame import *
+from minimax_new import minimax
 import chess
 
 pygame.init()
@@ -92,18 +93,13 @@ def get_square_from_click(x, y):
     square = f"{rows[x // 64]}{(y // 64) + 1}"
     return square
 
-
-turn = False
-new_move = True
+def computer(depth=3):
+    _, move3 = minimax(board, depth, True)
+    board.push(move3)
+    
 move = []
 running = True
 while running:
-    if new_move:
-        if turn is True:
-            turn = False
-        else:
-            turn = True
-        new_move = False
     app.fill((0, 0, 0))
     draw_board()
     update_chess_pieces()
@@ -115,11 +111,15 @@ while running:
             if pygame.mouse.get_pressed()[0]:
                 x, y = event.pos
                 move.append(get_square_from_click(x, y))
-                if len(move) == 2:
-                    move2 = chess.Move.from_uci(f"{move[0]}{move[1]}")
-                    if board.is_legal(chess.Move.from_uci(f"{move[0]}{move[1]}")):
-                        new_move = True
-                        board.push(move2)
+                try:
+                    if len(move) == 2:
+                        move2 = chess.Move.from_uci(f"{move[0]}{move[1]}")
+                        if board.is_legal(chess.Move.from_uci(f"{move[0]}{move[1]}")):
+                            board.push(move2)
+                            computer(2)
+                        move = []
+                except chess.InvalidMoveError:
                     move = []
+                    continue
 
 pygame.quit()
