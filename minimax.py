@@ -1,55 +1,62 @@
 import chess
-from algorithm2 import *
+from algorithm import *
 
-def minimax(board, depth, alpha, beta, maximizingPlayer):
-    best_score = -1000000
-    best_move = None
+def minimax(board: chess.Board, depth, maximizing, team, alpha=-float('inf'), beta=float('inf')):
+
     if depth == 0:
+        best_score = -800
+        best_move = None
         for move in board.legal_moves:
             board.push(move)
-            score = algorithm(board, True)
+            score2 = algorithm(board, team)
             board.pop()
-            if score > best_score:
-                best_score = score
+            if score2 > best_score:
+                best_score = score2
                 best_move = move
         return best_score, best_move
 
-        if maximizingPlayer:
-            bestScore = -float("inf")
-            bestMove = None
-            for move in board.legal_moves:
-                newBoard = board.copy()
-                newBoard.push(move)
-                score, _ = minimax(newBoard, depth - 1, alpha, beta, False)
-                if score > bestScore:
-                    bestScore = score
-                    bestMove = move
-                alpha = max(alpha, bestScore)
-                if beta <= alpha:
-                    break
-            return bestScore, bestMove
-        else:
-            bestScore = float("inf")
-            bestMove = None
-            for move in board.legal_moves:
-                newBoard = board.copy()
-                newBoard.push(move)
-                print(minimax(newBoard, depth - 1, alpha, beta, True))
-                score, _ = minimax(newBoard, depth - 1, alpha, beta, True)
-                if score < bestScore:
-                    bestScore = score
-                    bestMove = move
-                beta = min(beta, bestScore)
-                if beta <= alpha:
-                    break
-            return bestScore, bestMove
+    if maximizing:
+        best_score = -800
+        best_move = None
+        for move in board.legal_moves:
+            board.push(move)
+            score3, move2 = minimax(board=board, depth=depth - 1, maximizing=False, team=team, alpha=alpha, beta=beta)
+            score2 = algorithm(board, team)
+            if board.is_check():
+                score2 -= 1
+            board.pop()
+            if score2 is None:
+                return 0
+            if score2 > best_score and score2 > score3:
+                best_score = score2
+                best_move = move
+            alpha = max(alpha, score2)
+            if beta <= alpha:
+                break
 
+    else:
+        best_score = 800
+        best_move = None
+        for move in board.legal_moves:
+            board.push(move)
+            score3, move2 = minimax(board, depth - 1, True, team, alpha=alpha, beta=beta)
+            score2 = algorithm(board, team)
+            if board.is_into_check(move):
+                score2 += 0.5
+            board.pop()
+            if score2 < best_score and score2 < score3:
+                best_score = score2
+                best_move = move
+            beta = min(beta, score2)
+            if beta <= alpha:
+                break
 
-def main():
+    # Check if no legal moves were found
+    if best_move is None:
+        return (0, None)
+
+    return best_score, best_move
+
+if __name__ == '__main__':
     board = chess.Board()
-    alpha = -float("inf")
-    beta = float("inf")
-    print(minimax(board, 2, alpha, beta, True))
-
-if __name__ == "__main__":
-    main()
+    print(minimax(board=board, depth=3, maximizing=True, team=chess.BLACK))
