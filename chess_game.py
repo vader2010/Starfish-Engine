@@ -1,7 +1,6 @@
 import pygame
-from pygame import *
-from minimax_new import minimax
 import chess
+import minimax
 
 pygame.init()
 
@@ -24,7 +23,6 @@ queen = pygame.transform.scale(pygame.image.load("queen.png").convert_alpha(), (
 queen2 = pygame.transform.scale(pygame.image.load("queen2.png").convert_alpha(), (64, 64))
 king = pygame.transform.scale(pygame.image.load("king.png").convert_alpha(), (64, 64))
 king2 = pygame.transform.scale(pygame.image.load("king2.png").convert_alpha(), (64, 64))
-
 currentx = 0
 currenty = 0
 
@@ -86,6 +84,7 @@ def update_chess_pieces():
         else:
             continue
 
+
 def get_square_from_click(x, y):
     if x > 512 or x < 0 or y > 512 or y < 0:
         return None
@@ -93,33 +92,59 @@ def get_square_from_click(x, y):
     square = f"{rows[x // 64]}{(y // 64) + 1}"
     return square
 
-def computer(depth=3):
-    _, move3 = minimax(board, depth, True)
-    board.push(move3)
-    
+
+def computer():
+    score, move3 = minimax.minimax(board=board, depth=3, maximizing=True, team=chess.BLACK)
+    if board.is_legal(move3):
+        board.push(move3)
+        return move3
+    else:
+        running = False
+
+
+turn = True
 move = []
 running = True
+movestack_index = 0
+movestack = []
 while running:
     app.fill((0, 0, 0))
     draw_board()
     update_chess_pieces()
     pygame.display.flip()
+    if not turn:
+        if not turn:
+            move4 = computer()
+            turn = True
+            movestack_index += 1
+            movestack.append(move4)
+            continue
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                if movestack_index > 0:
+                    board.pop()
+                    movestack_index -= 1
+            if event.key == pygame.K_RIGHT:
+                if movestack_index < len(movestack):
+                    board.push(movestack[movestack_index])
+                    movestack_index += 1
+        if event.type == pygame.MOUSEBUTTONDOWN and movestack_index == len(board.move_stack):
             if pygame.mouse.get_pressed()[0]:
                 x, y = event.pos
                 move.append(get_square_from_click(x, y))
                 try:
                     if len(move) == 2:
                         move2 = chess.Move.from_uci(f"{move[0]}{move[1]}")
-                        if board.is_legal(chess.Move.from_uci(f"{move[0]}{move[1]}")):
+                        if board.is_legal(move2):
+                            turn = False
                             board.push(move2)
-                            computer(2)
+                            movestack.append(move2)
+                            movestack_index += 1
                         move = []
                 except chess.InvalidMoveError:
-                    move = []
+                    move.clear()
                     continue
-
 pygame.quit()
